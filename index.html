@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="es"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src https://*.r2.dev; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mesa Terminal"><meta name="theme-color" content="#0a0a0a">
+<title>Mesa Terminal</title>
+<link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon.svg">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap">
+<link rel="stylesheet" href="app.css">
+</head><body>
+<div class="win">
+ <div class="bar"><span class="d r"></span><span class="d y"></span><span class="d g"></span><span class="bt">Grok Bot Terminal — mesa · 7 bots · log first</span><span class="pill p-paper">PAPER · sin dinero real</span></div>
+ <header class="hdr">
+  <div class="face"><i></i><i></i></div>
+  <div class="ttl"><h1>Mesa Terminal <span class="pill p-ver">v2 · paper</span></h1>
+   <div class="st"><span class="pdot"></span> <b id="running">—</b> · <span id="clk-s">—</span> <span class="mut" id="age"></span></div>
+   <div class="tags"><span class="pill p-ok" id="tag-round">—</span><span class="pill p-mut" id="tag-sub">solo analiza y propone · ejecutor opera en paper</span></div></div>
+  <div class="kps"><div class="kp"><div class="kv big cy" id="h-eq">—</div><div class="kl">equity paper</div></div>
+  <div class="kp"><div class="kv" id="h-ideas">—</div><div class="kl">ideas ronda</div></div>
+  <div class="kp"><div class="kv gr" id="h-buy">—</div><div class="kl">compra</div></div>
+  <div class="kp"><div class="kv rd" id="h-pass">—</div><div class="kl">pasa</div></div></div>
+ </header>
+ <div class="body">
+  <aside class="agents"><div class="sh">AGENTES <span id="online">—</span></div><div id="bots"></div></aside>
+  <main class="main">
+   <section class="op">
+    <div class="sh">OPERADOR · ALEX <span class="pill p-mut">tú decides · nada se ejecuta desde aquí</span></div>
+    <div class="opg">
+     <div><div class="lb">HORA MADRID</div><div class="clock" id="clock">--:--:--</div><div class="mut sm" id="next">—</div></div>
+     <div><div class="lb">DECISIONES DE LA ÚLTIMA RONDA</div><div class="dec"><span class="kv cy" id="dec-n">—</span> <span class="mut sm" id="dec-sub">—</span></div>
+      <div class="sq" id="sq"></div>
+      <div class="leg"><span><i class="c-buy"></i>compra</span><span><i class="c-wait"></i>espera</span><span><i class="c-pass"></i>pasa</span></div></div>
+    </div>
+   </section>
+   <section class="flow">
+    <div class="sh">LIVE FLOW · SCOUT → NEWS → SENTIMIENTO → CHARTS → ESCÉPTICO → EJECUTOR <span id="flow-r" class="mut">—</span></div>
+    <div class="flg"><svg id="graph" viewBox="0 0 640 190" preserveAspectRatio="xMidYMid meet"></svg>
+     <div class="side">
+      <div class="blk"><div class="lb">PNL BALANCE</div><div class="kv" id="b-pct">—</div></div>
+      <div class="blk"><div class="lb">PROFIT</div><div class="kv" id="b-pnl">—</div></div>
+      <div class="blk"><div class="lb">EQUITY</div><div class="kv cy" id="b-eq">—</div></div>
+     </div></div>
+   </section>
+   <section class="bot2">
+    <div class="fun"><div class="sh">FUNNEL <span class="mut">última ronda → cuenta paper</span></div><div id="funnel"></div>
+     <div class="sh sh2">BALANCE LADDER <span class="mut">cada cierre añade un escalón</span></div><div class="lad" id="ladder"></div></div>
+    <div class="logs"><div class="sh">LOG <span class="mut"><span class="pdot"></span> escribiendo</span></div>
+     <div class="lh"><span>TIME</span><span>BOT</span><span>EVENT</span><span>DETAILS</span></div><div id="log" class="lg"></div></div>
+   </section>
+  </main>
+ </div>
+</div>
+<div id="det" class="det" hidden><div class="dh"><span id="det-t">—</span><button id="det-x" aria-label="Cerrar">×</button></div><div id="det-b" class="db"></div></div>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body></html>
