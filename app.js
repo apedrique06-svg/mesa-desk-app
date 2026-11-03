@@ -14,7 +14,7 @@ const agoTxt=s=>s==null?"—":s<60?`hace ${Math.round(s)} s`:s<3600?`hace ${Math
 const VC={COMPRA:"#39ff88",ESPERA:"#ffb020",PASA:"#ff4d5e"};const vc=v=>VC[v]||"#7d838a";
 const vcls=v=>({COMPRA:"c-buy",ESPERA:"c-wait",PASA:"c-pass"}[v]||"c-x");
 const hasLv=i=>i.entry!=null&&i.stop!=null&&i.target!=null;
-let D=null,last="",sel=null;const prev={};const seenLog=new Set();let firstLog=true;
+let D=null,last="",lastLive="",sel=null;const prev={};const seenLog=new Set();let firstLog=true;
 
 function counts(ideas){const c={COMPRA:0,ESPERA:0,PASA:0};(ideas||[]).forEach(i=>{if(c[i.verdict]!=null)c[i.verdict]++});return c}
 function countTo(el,key,val,fmt){
@@ -127,6 +127,7 @@ function render(){
   let e=sb,steps=ok(sb)?[{v:sb}]:[];(L.closed_trades||[]).forEach(t=>{if(ok(t.pnl)&&ok(e)){e+=t.pnl;steps.push({v:e,neg:t.pnl<0})}});
   $("#ladder").innerHTML=steps.length?steps.slice(-7).map((s,k,a)=>`<span class="${k===a.length-1?"now":""} ${s.neg?"neg":""}">${usd(s.v)}</span>`).join(""):`<span class="mut">—</span>`;
   renderLog();
+  renderPos();
   if(sel)openDet(sel);
 }
 
@@ -135,8 +136,8 @@ function openDet(what){
   if(what.startsWith("idea:")){const i=ideas[+what.slice(5)];if(!i){closeDet();return}
     t=`> ${i.asset} · ${String(i.direction).toUpperCase()}`;
     b=`<div class="k">VEREDICTO</div><b style="color:${vc(i.verdict)}">${esc(i.verdict)}</b> · ${esc(i.verdict_reason)}<div class="lv"><div>E<br>${num(i.entry)}</div><div class="rd">S<br>${num(i.stop)}</div><div class="gr">O<br>${num(i.target)}</div><div>R/B<br>${num(i.rr,1)}</div></div><div class="k">POR QUÉ</div>${esc(i.why)}<div class="k">SENTIMIENTO</div>${esc(i.sentiment)}<div class="k">RONDA</div>${dhm(I.updated_at)}`;
-  }else{const x=bots().find(z=>z.id===what);if(!x){closeDet();return}t=`> ${x.n} · ${x.st}`;b=x.det}
-  $("#det-t").textContent=t;$("#det-b").innerHTML=b;$("#det").hidden=false;
+  }else{const x=bots().find(z=>z.id===what);if(!x){closeDet();return}t=`> ${x.n} · ${x.st}`;b=(what==="ejec"?detPos():"")+x.det}
+  const db=$("#det-b"),same=$("#det-t").textContent===t&&!$("#det").hidden,sc=$("#det").scrollTop;$("#det-t").textContent=t;db.innerHTML=b;$("#det").hidden=false;if(same)$("#det").scrollTop=sc;
   document.querySelectorAll(".bot").forEach(e=>e.classList.toggle("sel",e.dataset.bot===sel));
 }
 function closeDet(){sel=null;$("#det").hidden=true;document.querySelectorAll(".bot.sel").forEach(e=>e.classList.remove("sel"))}
@@ -146,6 +147,57 @@ document.addEventListener("click",ev=>{
   const id=ev.target.closest("[data-idea]");if(id){const k="idea:"+id.dataset.idea;sel===k?closeDet():openDet(k);return}
 });
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeDet()});
+
+/* POSICIONES ABIERTAS · gráfico en vivo (SVG inline, sin librerías). Datos: D.live (Yahoo 5m, caché 60 s en el servidor). */
+const dirUp=p=>!/corto|short/i.test(String(p.direction||""));
+function livePos(){const L=D&&D.ledger||{},lv=(D&&D.live&&D.live.positions)||[];
+  return (L.open_positions||[]).map(p=>Object.assign({},p,lv.find(x=>x.id&&x.id===p.id)||lv.find(x=>x.asset===p.asset)||{}))}
+function fmtP(v){if(!ok(v))return"—";const a=Math.abs(v);return Number(v).toLocaleString("en-US",{minimumFractionDigits:a>=1000?0:2,maximumFractionDigits:a>=1000?2:a>=1?2:6})}
+function posChart(p,W,H){
+  W=Math.max(240,Math.round(W||600));H=H||Math.round(Math.min(230,Math.max(170,W*.42)));
+  const ser=(p.series||[]).filter(s=>ok(s[1])),lvl=[["ENTRADA",p.fill,"#2de2e6"],["STOP",p.stop,"#ff4d5e"],["OBJETIVO",p.target,"#39ff88"]].filter(l=>ok(l[1]));
+  const vals=ser.map(s=>s[1]).concat(lvl.map(l=>+l[1]));if(ok(p.last))vals.push(+p.last);
+  if(!vals.length)return`<div class="pc-empty">sin datos de precio${p.error?" · "+esc(p.error):""}</div>`;
+  let lo=Math.min(...vals),hi=Math.max(...vals);const pad=(hi-lo||Math.abs(hi)*.01||1)*.08;lo-=pad;hi+=pad;
+  const L=8,R=W>420?86:74,T=10,B=20,cw=W-L-R,ch=H-T-B;
+  const t0=ser.length?ser[0][0]:0,t1=ser.length?ser[ser.length-1][0]:1,sp=t1-t0||1;
+  const X=t=>L+(ser.length>1?(t-t0)/sp*cw:cw),Y=v=>T+(hi-v)/(hi-lo)*ch,g=[];
+  const uid="g"+Math.random().toString(36).slice(2,8),up=dirUp(p),pnl=p.pnl_usd,col=ok(pnl)?(pnl>=0?"#39ff88":"#ff4d5e"):"#a78bfa";
+  g.push(`<defs><linearGradient id="${uid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a78bfa" stop-opacity=".35"/><stop offset="1" stop-color="#a78bfa" stop-opacity="0"/></linearGradient><filter id="${uid}f" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="2.2"/></filter></defs>`);
+  for(let k=0;k<=4;k++){const y=T+ch*k/4;g.push(`<line x1="${L}" x2="${L+cw}" y1="${y}" y2="${y}" stroke="#1d1f22"/>`)}
+  // zona de riesgo / beneficio
+  if(ok(p.fill)&&ok(p.stop))g.push(`<rect x="${L}" width="${cw}" y="${Math.min(Y(p.fill),Y(p.stop))}" height="${Math.abs(Y(p.fill)-Y(p.stop))}" fill="#ff4d5e" opacity=".06"/>`);
+  if(ok(p.fill)&&ok(p.target))g.push(`<rect x="${L}" width="${cw}" y="${Math.min(Y(p.fill),Y(p.target))}" height="${Math.abs(Y(p.fill)-Y(p.target))}" fill="#39ff88" opacity=".05"/>`);
+  // etiquetas sin solaparse
+  const lab=lvl.map(l=>({n:l[0],v:+l[1],c:l[2],y:Y(+l[1])}));if(ok(p.last))lab.push({n:"AHORA",v:+p.last,c:col,y:Y(+p.last),now:1});
+  lab.sort((a,b)=>a.y-b.y);for(let k=1;k<lab.length;k++)if(lab[k].y-lab[k-1].y<22)lab[k].y=lab[k-1].y+22;
+  const over=lab.length?lab[lab.length-1].y-(T+ch-4):0;if(over>0)lab.forEach(l=>l.y-=over);
+  lvl.forEach(l=>{const y=Y(+l[1]);g.push(`<line x1="${L}" x2="${L+cw}" y1="${y}" y2="${y}" stroke="${l[2]}" stroke-width="1.2" stroke-dasharray="${l[0]==="ENTRADA"?"5 4":"2 3"}" opacity=".9"/>`)});
+  if(ser.length>1){const d=ser.map((s,k)=>`${k?"L":"M"}${X(s[0]).toFixed(1)},${Y(s[1]).toFixed(1)}`).join("");
+    g.push(`<path d="${d} L${X(t1).toFixed(1)},${T+ch} L${X(t0).toFixed(1)},${T+ch}Z" fill="url(#${uid})"/>`);
+    g.push(`<path d="${d}" fill="none" stroke="#a78bfa" stroke-width="3" opacity=".45" filter="url(#${uid}f)"/><path d="${d}" fill="none" stroke="#c4b5fd" stroke-width="1.6" stroke-linejoin="round"/>`);
+    const fmt=t=>new Date(t*1000).toLocaleTimeString("es-ES",{timeZone:TZ,hour:"2-digit",minute:"2-digit"});
+    const n=W>420?4:2;for(let k=0;k<=n;k++){const t=t0+sp*k/n;g.push(`<text x="${X(t)}" y="${H-5}" font-size="9.5" fill="#50555b" text-anchor="${k===0?"start":k===n?"end":"middle"}">${fmt(t)}</text>`)}
+  }else g.push(`<text x="${L+cw/2}" y="${T+ch/2}" font-size="10.5" fill="#7d838a" text-anchor="middle">sin barras intradía todavía</text>`);
+  if(ok(p.opened_at)||p.opened_at){const to=new Date(p.opened_at).getTime()/1000;if(ser.length>1&&to>=t0&&to<=t1)g.push(`<line x1="${X(to)}" x2="${X(to)}" y1="${T}" y2="${T+ch}" stroke="#2de2e6" stroke-opacity=".35" stroke-dasharray="1 3"/><text x="${X(to)>L+cw-80?X(to)-3:X(to)+3}" y="${T+9}" font-size="9" fill="#2de2e6" opacity=".7" text-anchor="${X(to)>L+cw-80?"end":"start"}">entrada ${hm(p.opened_at)}</text>`)}
+  if(ok(p.last)){const x=ser.length>1?X(t1):L+cw,y=Y(+p.last);
+    g.push(`<line x1="${x}" x2="${L+cw}" y1="${y}" y2="${y}" stroke="${col}" stroke-width="1"/><circle cx="${x}" cy="${y}" r="7" fill="${col}" opacity=".25">${NOANIM?"":`<animate attributeName="r" values="4;10;4" dur="1.8s" repeatCount="indefinite"/><animate attributeName="opacity" values=".45;0;.45" dur="1.8s" repeatCount="indefinite"/>`}</circle><circle cx="${x}" cy="${y}" r="3.4" fill="${col}" stroke="#0a0a0a"/>`)}
+  lab.forEach(l=>{const x=L+cw+4;g.push(`<g><rect x="${x}" y="${l.y-10}" width="${R-6}" height="20" rx="4" fill="${l.now?l.c:"#0a0a0a"}" fill-opacity="${l.now?.18:1}" stroke="${l.c}"/><text x="${x+4}" y="${l.y-1.5}" font-size="7.5" fill="${l.c}" opacity=".85">${l.n}</text><text x="${x+4}" y="${l.y+7.5}" font-size="9.5" font-weight="700" fill="${l.now?"#e6e6e6":l.c}">${fmtP(l.v)}</text></g>`)});
+  return `<svg class="pc-svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Gráfico ${esc(p.asset)}">${g.join("")}</svg>`;
+}
+function posHead(p){const up=dirUp(p),pc=ok(p.pnl_usd)?(p.pnl_usd>=0?"gr":"rd"):"mut";
+  return `<div class="ph"><span class="pa">${esc(p.asset)}</span><span class="pill ${up?"p-ok":"p-paper"}">${up?"LARGO":"CORTO"}</span><span class="mut">${num(p.qty,6)} uds</span>
+   <span class="pp ${pc}"><b>${sUsd(p.pnl_usd)}</b> <span>${pct(p.pnl_pct)}</span></span></div>
+   <div class="pm"><span>ahora <b class="${pc}">${fmtP(p.last)}</b></span><span>entrada ${fmtP(p.fill)}</span><span class="rd">stop ${fmtP(p.stop)}</span><span class="gr">obj ${fmtP(p.target)}</span><span class="mut">${p.ok===false?"sin precio ("+esc(p.error||"error")+")":p.stale?"precio en caché":"5m · "+hm(p.last_time)}</span></div>`}
+function posBlock(p,w){return `<div class="pcard">${posHead(p)}<div class="pc-wrap">${posChart(p,w)}</div></div>`}
+function renderPos(){const el=$("#pos");if(!el||!D)return;const P=livePos();
+  $("#pos-n").textContent=P.length?`${P.length} abierta${P.length>1?"s":""} · act. ${hm(D.live&&D.live.updated_at)}`:"0 abiertas";
+  if(!P.length){el.innerHTML=`<div class="pos-empty"><span class="pdot"></span> Ejecutor no tiene operaciones abiertas · esperando COMPRA de Escéptico</div>`;return}
+  const w=el.clientWidth||600,cols=w>900&&P.length>1?2:1,cw=(w-(cols-1)*10)/cols-2;
+  el.style.gridTemplateColumns=`repeat(${cols},minmax(0,1fr))`;el.innerHTML=P.map(p=>`<div class="pos-i" data-bot="ejec">${posBlock(p,cw-14)}</div>`).join("")}
+function detPos(){const P=livePos(),w=Math.min(420,window.innerWidth)-26;
+  return `<div class="k">POSICIONES ABIERTAS · GRÁFICO EN VIVO</div>`+(P.length?P.map(p=>posBlock(p,w)).join(""):`<div class="pos-empty">ninguna abierta</div>`)}
+let rzT;window.addEventListener("resize",()=>{clearTimeout(rzT);rzT=setTimeout(()=>{renderPos();if(sel==="ejec")openDet(sel)},150)});
 
 function tick(){
   const now=new Date(),s=now.toLocaleTimeString("es-ES",{timeZone:TZ,hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false});
@@ -172,7 +224,7 @@ async function fetchData(){
   return JSON.parse(new TextDecoder().decode(pl));
 }
 async function load(){
-  try{const j=await fetchData();const k=JSON.stringify([j.ideas,j.ledger,j.history]);D=j;if(k!==last){last=k;render()}tick()}
+  try{const j=await fetchData();const k=JSON.stringify([j.ideas,j.ledger,j.history]);D=j;if(k!==last){last=k;lastLive=JSON.stringify(j.live);render()}else{const lk=JSON.stringify(j.live);if(lk!==lastLive){lastLive=lk;renderPos();if(sel==="ejec")openDet(sel)}}tick()}
   catch(e){$("#running").textContent=e&&e.message?e.message:"sin conexión"}
 }
 window.addEventListener("hashchange",()=>{const u=parseCreds(location.hash);if(u){creds=null;ckey=null;load()}});

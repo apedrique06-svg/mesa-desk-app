@@ -73,6 +73,22 @@ h1{margin:0;font-size:22px;font-weight:800;letter-spacing:-.5px}
 .db{padding:10px 12px;font-size:11.5px;line-height:1.55}
 .db .k{color:var(--mu);font-size:10px;letter-spacing:1px;margin-top:8px}.db .k:first-child{margin-top:0}
 .db .lv{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:4px}.db .lv div{border:1px solid var(--ln2);border-radius:4px;padding:5px;text-align:center}
+/* posiciones abiertas + gráfico en vivo */
+.pos{display:grid;gap:10px}
+.pos-i{cursor:pointer;min-width:0}
+.pcard{border:1px solid var(--ln2);border-radius:7px;padding:7px 9px 4px;background:linear-gradient(180deg,rgba(167,139,250,.05),rgba(45,226,230,.02));box-shadow:inset 0 0 0 1px rgba(167,139,250,.06);transition:border-color .2s,box-shadow .2s;animation:in .4s both;margin-top:4px}
+.pos-i:hover .pcard{border-color:var(--vi);box-shadow:0 0 0 1px var(--vi),0 0 16px rgba(167,139,250,.22)}
+.ph{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pa{font-weight:800;font-size:15px;letter-spacing:.5px;color:var(--tx);text-shadow:0 0 10px rgba(45,226,230,.35)}
+.pp{margin-left:auto;font-size:14px;font-variant-numeric:tabular-nums}.pp span{font-size:11px;opacity:.85;margin-left:4px}
+.pp.gr{text-shadow:0 0 10px rgba(57,255,136,.35)}.pp.rd{text-shadow:0 0 10px rgba(255,77,94,.35)}
+.pm{display:flex;gap:4px 12px;flex-wrap:wrap;color:var(--mu);font-size:10.5px;margin:3px 0 2px;font-variant-numeric:tabular-nums}.pm b{font-weight:700}
+.pc-wrap{width:100%;overflow:hidden}
+.pc-svg{display:block;max-width:100%;height:auto;font-family:var(--f)}
+.pc-svg text{font-family:var(--f)}
+.pc-empty,.pos-empty{color:var(--mu);font-size:11px;padding:14px 4px;text-align:center;border:1px dashed var(--ln2);border-radius:6px}
+.pos-empty{text-align:left;padding:10px}
+.db .pcard{margin:6px 0 4px}
 @media (max-width:820px){
  html,body{font-size:12px}
  .bt{display:none}.bar .pill{margin-left:auto}
@@ -91,6 +107,7 @@ h1{margin:0;font-size:22px;font-weight:800;letter-spacing:-.5px}
  .side{flex-direction:row;justify-content:space-between}.blk{flex:1}
  #graph{height:170px}
  .lg{max-height:320px}
+ .pa{font-size:14px}.pp{font-size:13px}
  .lr,.lh{grid-template-columns:40px 66px 62px 1fr}
  .lr{padding:8px 4px}
  .det{left:0;right:0;bottom:0;width:100%;border-radius:12px 12px 0 0;max-height:70vh;padding-bottom:env(safe-area-inset-bottom)}
